@@ -1,0 +1,6 @@
+*.gguf
+data/input/*
+data/output/*
+data/vectors/*
+__pycache__/
+.env
