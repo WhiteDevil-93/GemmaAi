@@ -22,8 +22,8 @@ colorama>=0.4.6
 llama-index-llms-llama-cpp
 """
 
-def jules_execute():
-    print(">> JULES: DETECTED DEPENDENCY LOOP. APPLYING SURGICAL FIX...")
+def julia_execute():
+    print(">> JULIA: DETECTED DEPENDENCY LOOP. APPLYING SURGICAL FIX...")
     
     # 1. Overwrite requirements.txt with stable pinned versions
     req_path = os.path.join(PROJECT_NAME, "requirements.txt")
@@ -41,4 +41,4 @@ def jules_execute():
     subprocess.run([sys.executable, ui_path])
 
 if __name__ == "__main__":
-    jules_execute()
+    julia_execute()
