@@ -3,21 +3,9 @@ import os
 
 # --- CONFIGURATION ---
 PROJECT_NAME = "assistant-platform"
-PERSONA = "You are Jules, a Senior Clinical Toxicologist and AI Operations Manager. Direct, technical, and execution-focused."
+PERSONA = "You are Julia, a Senior Clinical Toxicologist and AI Operations Manager. Direct, technical, and execution-focused."
 
-# --- DIRECTORY STRUCTURE ---
-DIRS = [
-    f"{PROJECT_NAME}/app/core",        
-    f"{PROJECT_NAME}/app/tools",       
-    f"{PROJECT_NAME}/app/prompts",     
-    f"{PROJECT_NAME}/app/schemas",     
-    f"{PROJECT_NAME}/app/connectors",  
-    f"{PROJECT_NAME}/data/input",      
-    f"{PROJECT_NAME}/data/output",     
-    f"{PROJECT_NAME}/data/vectors",    
-    f"{PROJECT_NAME}/docs",
-    f"{PROJECT_NAME}/tests",
-]
+# ... (omitted directory structure)
 
 # --- FILE CONTENTS ---
 FILES = {
@@ -67,7 +55,7 @@ load_dotenv()
 init()
 
 def main():
-    print(f"{Fore.CYAN}[JULES]{Style.RESET_ALL} Control Room CLI Active.")
+    print(f"{Fore.CYAN}[JULIA]{Style.RESET_ALL} Control Room CLI Active.")
     print("Run 'python web_ui.py' to launch the visual interface.")
 
 if __name__ == "__main__":
@@ -87,10 +75,10 @@ SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT", "System Ready.")
 def chat_logic(message, history):
     # This is where we hook into the Gemma 3 12B Model
     # For now, it returns a skeleton response to prove the UI works
-    return f"[JULES]: Received. You said: {message} (Logic connecting to GPU...)"
+    return f"[JULIA]: Received. You said: {message} (Logic connecting to GPU...)"
 
 with gr.Blocks(theme=gr.themes.Soft(primary_hue="cyan")) as demo:
-    gr.Markdown("# 🏥 Jules: Clinical AI Operations")
+    gr.Markdown("# 🏥 Julia: Clinical AI Operations")
     gr.Markdown("> *Senior Toxicologist & Research Orchestrator*")
     
     with gr.Row():
@@ -111,14 +99,14 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="cyan")) as demo:
     submit.click(chat_logic, [msg, chatbot], [chatbot])
 
 if __name__ == "__main__":
-    print("Launching Jules Web Interface...")
+    print("Launching Julia Web Interface...")
     demo.launch(server_name="0.0.0.0", server_port=7860, share=False)
 """
 }
 
 # --- BUILDER LOGIC ---
-def build_jules():
-    print("Initializing Jules v2 (Web Enabled)...")
+def build_julia():
+    print("Initializing Julia v3 (Web Enabled)...")
     for directory in DIRS:
         try:
             os.makedirs(directory, exist_ok=True)
@@ -139,4 +127,4 @@ def build_jules():
     print("3. python web_ui.py")
 
 if __name__ == "__main__":
-    build_jules()
+    build_julia()
