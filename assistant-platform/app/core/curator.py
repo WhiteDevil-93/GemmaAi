@@ -35,10 +35,18 @@ class Curator:
         
         prompt = f"<start_of_turn>system\n{system_msg}<end_of_turn>\n"
         
-        for user_msg, bot_msg in history:
-            prompt += f"<start_of_turn>user\n{user_msg}<end_of_turn>\n"
-            if bot_msg:
-                prompt += f"<start_of_turn>model\n{bot_msg}<end_of_turn>\n"
+        for turn in history:
+            # Handle both Tuple/List format (Gradio Default) and Dict format (Just in case)
+            if isinstance(turn, (list, tuple)):
+                user_msg, bot_msg = turn
+                prompt += f"<start_of_turn>user\n{user_msg}<end_of_turn>\n"
+                if bot_msg:
+                    prompt += f"<start_of_turn>model\n{bot_msg}<end_of_turn>\n"
+            elif isinstance(turn, dict):
+                # Fallback
+                role = "user" if turn["role"] == "user" else "model"
+                content = turn["content"]
+                prompt += f"<start_of_turn>{role}\n{content}<end_of_turn>\n"
         
         prompt += f"<start_of_turn>user\n{message}<end_of_turn>\n<start_of_turn>model\n"
         

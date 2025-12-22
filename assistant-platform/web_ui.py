@@ -33,20 +33,36 @@ except Exception as e:
 # --- LOGIC ---
 def chat_logic(message, history):
     if not curator:
-        return "[FATAL]: Curator corrupted."
+        # Compatibility: History is list of [user_msg, bot_msg] lists/tuples
+        history.append([message, "[FATAL]: Curator corrupted."])
+        return "", history
     
     # Check for User Commands
     if "index onedrive" in message.lower() or "sync data" in message.lower():
-        # Clean trigger manually for now, or just let the curator handle the response
         threading.Thread(target=run_ingestion).start()
-        return "[JULES]: Background Indexing Initiated. Proceeding with standard protocols."
+        history.append([message, "[JULES]: Background Indexing Initiated."])
+        return "", history
 
     try:
-        # Standard Curator Response
+        # We need to construct the prompt from the history of [user, bot] pairs
+        # The Curator checks for dicts currently, we need to fix that too or convert here.
+        # Let's fix Curator to handle the tuples again because Gradio 4 passes tuples by default for Chatbot without type="messages".
+        
+        # ACTUALLY: Let's keep Curator robust. 
+        # But for NOW, let's just make the UI work with the default Tuple format.
+        
+        # 1. Generate Response
+        # We pass the history as-is (list of lists/tuples).
+        # We need to modify Curator to handle this format again.
         response = curator.generate_response(message, history)
-        return response
+        
+        # 2. Append result
+        history.append([message, response])
+        
+        return "", history
     except Exception as e:
-        return f"[ERROR]: {e}"
+        history.append([message, f"[ERROR]: {e}"])
+        return "", history
 
 def run_ingestion():
     """Background task wrapper"""
@@ -78,9 +94,11 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="cyan")) as demo:
                 clear = gr.Button("Clear Context")
 
     # Wire up Event Handlers
-    msg.submit(chat_logic, [msg, chatbot], [chatbot])
-    submit.click(chat_logic, [msg, chatbot], [chatbot])
-    submit.click(lambda: "", None, msg)
+    # Wire up Event Handlers
+    # Note: chat_logic returns (empty_string, new_history).
+    # so we map outputs to [msg, chatbot] to clear the box and update the chat.
+    msg.submit(chat_logic, [msg, chatbot], [msg, chatbot])
+    submit.click(chat_logic, [msg, chatbot], [msg, chatbot])
     
     # Sync Button
     sync_btn.click(fn=run_ingestion, inputs=None, outputs=None) 
@@ -89,4 +107,4 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="cyan")) as demo:
 
 if __name__ == "__main__":
     print("Launching Jules Web Interface (Curator-Driven)...")
-    demo.launch(server_name="127.0.0.1", server_port=7860, share=False)
+    demo.launch(server_name="0.0.0.0", server_port=7860, share=False)
