@@ -5,7 +5,19 @@ import os
 PROJECT_NAME = "assistant-platform"
 PERSONA = "You are Julia, a Senior Clinical Toxicologist and AI Operations Manager. Direct, technical, and execution-focused."
 
-# ... (omitted directory structure)
+# --- DIRECTORY STRUCTURE ---
+DIRS = [
+    f"{PROJECT_NAME}/app/core",        
+    f"{PROJECT_NAME}/app/tools",       
+    f"{PROJECT_NAME}/app/prompts",     
+    f"{PROJECT_NAME}/app/schemas",     
+    f"{PROJECT_NAME}/app/connectors",  
+    f"{PROJECT_NAME}/data/input",      
+    f"{PROJECT_NAME}/data/output",     
+    f"{PROJECT_NAME}/data/vectors",    
+    f"{PROJECT_NAME}/docs",
+    f"{PROJECT_NAME}/tests",
+]
 
 # --- FILE CONTENTS ---
 FILES = {

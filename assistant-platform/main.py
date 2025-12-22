@@ -7,7 +7,7 @@ load_dotenv()
 init()
 
 def main():
-    print(f"{Fore.CYAN}[JULES]{Style.RESET_ALL} Control Room CLI Active.")
+    print(f"{Fore.CYAN}[JULIA]{Style.RESET_ALL} Control Room CLI Active.")
     print("Run 'python web_ui.py' to launch the visual interface.")
 
 if __name__ == "__main__":
