@@ -7,18 +7,19 @@ PROJECT_NAME = "assistant-platform"
 
 # --- FIXED REQUIREMENTS (Pinned to stop the loop) ---
 REQUIREMENTS = """
-llama-cpp-python>=0.2.77
-numpy<2.0.0
-pydantic>=2.0
-gradio>=4.0.0
-# Pinned for Windows Stability to stop the backtracking
-chromadb==0.4.24
-llama-index-core==0.10.18
-llama-index-embeddings-huggingface==0.2.0
-llama-index-vector-stores-chroma==0.1.6
-python-dotenv
-pyyaml
-colorama
+llama-cpp-python>=0.3.0
+numpy
+pydantic>=2.0.0
+gradio>=5.11.0
+# Updated dependent versions
+chromadb>=0.5.17
+llama-index-core>=0.11.23
+llama-index-embeddings-huggingface>=0.3.1
+llama-index-vector-stores-chroma>=0.2.2
+python-dotenv>=1.0.1
+pyyaml>=6.0.2
+colorama>=0.4.6
+llama-index-llms-llama-cpp
 """
 
 def jules_execute():

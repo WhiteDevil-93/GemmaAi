@@ -1,0 +1,12 @@
+# Core Machine Learning Frameworks
+torch
+transformers
+accelerate
+
+# Data Processing
+pandas
+numpy
+
+# Development Tools
+jupyter
+ipykernel
