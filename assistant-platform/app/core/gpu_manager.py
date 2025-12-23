@@ -1,7 +1,5 @@
 import gc
-import torch # Just for VRAM clearing if needed (though llama-cpp handles its own)
-# Actually, llama-cpp-python manages its own memory context.
-# We just need to nullify the references.
+import torch # Useful for CUDA cache clearing
 
 class GPUManager:
     _instance = None
@@ -9,37 +7,45 @@ class GPUManager:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(GPUManager, cls).__new__(cls)
-            cls._instance.active_model = None
-            cls._instance.curator_ref = None
-            cls._instance.devourer_ref = None
+            cls._instance.active_model_id = None
+            cls._instance.registry = {} # Stores {model_id: model_object}
         return cls._instance
 
-    def register(self, curator, devourer):
-        self.curator_ref = curator
-        self.devourer_ref = devourer
+    def register(self, model_id, model_obj):
+        """Registers a model object that must have load() and unload() methods."""
+        self.registry[model_id] = model_obj
+        print(f">> GPU_MANAGER: Registered {model_id}")
 
-    def request_curator(self):
-        if self.active_model == "curator":
-            return
+    def request_model(self, model_id):
+        """Swaps the requested model into VRAM, unloading the previous one."""
+        if self.active_model_id == model_id:
+            return True # Already loaded
             
-        print(">> GPU_MANAGER: Swapping to CURATOR...")
-        if self.devourer_ref:
-            self.devourer_ref.unload()
+        print(f">> GPU_MANAGER: Swap requested for [{model_id}]...")
         
-        if self.curator_ref:
-            self.curator_ref.load()
-            
-        self.active_model = "curator"
+        # 1. Unload current model
+        if self.active_model_id in self.registry:
+            print(f">> GPU_MANAGER: Unloading {self.active_model_id}")
+            self.registry[self.active_model_id].unload()
+            self.active_model_id = None
+            # Explicit GC
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        
+        # 2. Load requested model
+        if model_id in self.registry:
+            print(f">> GPU_MANAGER: Loading {model_id}")
+            try:
+                self.registry[model_id].load()
+                self.active_model_id = model_id
+                return True
+            except Exception as e:
+                print(f">> GPU_MANAGER ERROR: Failed to load {model_id}: {e}")
+                return False
+        else:
+            print(f">> GPU_MANAGER ERROR: Model id {model_id} not registered.")
+            return False
 
-    def request_devourer(self):
-        if self.active_model == "devourer":
-            return
-            
-        print(">> GPU_MANAGER: Swapping to DEVOURER...")
-        if self.curator_ref:
-            self.curator_ref.unload()
-            
-        if self.devourer_ref:
-            self.devourer_ref.load()
-            
-        self.active_model = "devourer"
+    def get_active(self):
+        return self.active_model_id

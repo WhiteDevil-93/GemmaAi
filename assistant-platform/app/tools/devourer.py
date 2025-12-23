@@ -7,13 +7,14 @@ from llama_index.core import (
     VectorStoreIndex,
     SimpleDirectoryReader,
     StorageContext,
-    Settings,
-    load_index_from_storage
+    Settings
 )
 from llama_index.llms.llama_cpp import LlamaCPP
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.vector_stores.chroma import ChromaVectorStore
 import chromadb
+
+from app.core.gpu_manager import GPUManager
 
 load_dotenv()
 
@@ -26,23 +27,25 @@ class Devourer:
         self.llm = None
         self.embed_model = None
         self.index = None
+        self.gpu_manager = GPUManager()
+        self.gpu_manager.register("devourer", self)
         
         # Devourer is background, so often lazy loaded
         if not lazy:
-            self.load()
+            self.gpu_manager.request_model("devourer")
 
     def load(self):
         if self.llm: return
-        print(f"LOADING DEVOURER (Background Worker): {self.model_path}")
+        print(f"LOADING DEVOURER (27B Expert): {self.model_path}")
 
-        # 1. Setup LLM (27B Model) - CPU Focused
+        # 1. Setup LLM (27B Model)
         self.llm = LlamaCPP(
             model_path=self.model_path,
             temperature=0.1, 
             max_new_tokens=2048,
             context_window=32768, 
             model_kwargs={
-                "n_gpu_layers": 0, # Force CPU
+                "n_gpu_layers": int(os.getenv("GPU_LAYERS", 28)),
                 "n_threads": int(os.getenv("THREADS", 8)),
             },
             verbose=True
@@ -62,7 +65,6 @@ class Devourer:
             print("UNLOADING DEVOURER...")
             del self.llm
             self.llm = None
-            # Embed model might stay or go, usually small enough to keep
 
     def _init_vector_store(self):
         self.chroma_client = chromadb.PersistentClient(path="./data/vectors")
@@ -79,7 +81,7 @@ class Devourer:
         return None
 
     def ingest_data(self):
-        self.load() # Ensure loaded
+        self.gpu_manager.request_model("devourer")
         
         dirs_to_scan = ["./data/input", "./data/mobile"]
         all_docs = []
@@ -106,7 +108,7 @@ class Devourer:
         return f"✔ Digested {len(all_docs)} documents."
 
     def query(self, message):
-        self.load()
+        self.gpu_manager.request_model("devourer")
         if not self.index:
             return "No knowledge indexed yet."
         query_engine = self.index.as_query_engine()

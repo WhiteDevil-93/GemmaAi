@@ -41,8 +41,17 @@ llama-index-llms-llama-cpp
 GPU_LAYERS=28
 CONTEXT_WINDOW=32768
 THREADS=8
+# --- BASE MODELS ---
 MODEL_PATH_CURATOR="C:/AI/Models/gemma-3-12b-it-qat-Q4_K_M.gguf"
 MODEL_PATH_DEVOURER="C:/AI/Models/gemma-3-27b-it-qat-Q4_K_M.gguf"
+
+# --- SPECIALIST PRESETS ---
+MODEL_PATH_CODE="C:/AI/Models/codegemma-7b.gguf"
+MODEL_PATH_MED="C:/AI/Models/medgemma-9b.gguf"
+MODEL_PATH_VISION="C:/AI/Models/paligemma-3b-pt-224.gguf"
+MODEL_PATH_DATA="C:/AI/Models/datagemma-2b.gguf"
+MODEL_PATH_SHIELD="C:/AI/Models/shieldgemma-2b.gguf"
+
 SYSTEM_PROMPT="{PERSONA}"
 """,
 

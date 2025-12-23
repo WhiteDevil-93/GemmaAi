@@ -1,8 +1,4 @@
-import os
-import sys
-from dotenv import load_dotenv
-from llama_cpp import Llama
-from app.prompts.personas import UNRESTRICTED_TOXICOLOGIST
+from app.core.gpu_manager import GPUManager
 
 load_dotenv()
 
@@ -13,19 +9,20 @@ class Curator:
             raise ValueError("MODEL_PATH_CURATOR not found in .env")
         
         self.llm = None
+        self.gpu_manager = GPUManager()
+        self.gpu_manager.register("curator", self)
+        
         if not lazy:
-            self.load()
+            self.gpu_manager.request_model("curator")
             
     def load(self):
         if self.llm: return
         print(f"LOADING CURATOR: {self.model_path}")
-        # n_gpu_layers=-1 tries to offload EVERYTHING to GPU.
-        # If it fails/crashes, we know CUDA isn't working or VRAM is full.
         self.llm = Llama(
             model_path=self.model_path,
             n_ctx=int(os.getenv("CONTEXT_WINDOW", 8192)),
             n_threads=int(os.getenv("THREADS", 8)),
-            n_gpu_layers=-1, 
+            n_gpu_layers=int(os.getenv("GPU_LAYERS", 28)), 
             verbose=True
         )
 
@@ -36,12 +33,8 @@ class Curator:
             self.llm = None
 
     def stream_response(self, message, history):
-        """
-        Yields tokens for Gradio streaming.
-        History is expected to be a list of dicts: {"role": "user", "content": "..."}
-        """
-        if not self.llm:
-            self.load()
+        # Ensure we are in VRAM
+        self.gpu_manager.request_model("curator")
 
         system_msg = UNRESTRICTED_TOXICOLOGIST
         
