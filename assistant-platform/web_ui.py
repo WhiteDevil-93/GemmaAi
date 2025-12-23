@@ -1,13 +1,12 @@
 import gradio as gr
 import os
 from dotenv import load_dotenv
-
-load_dotenv()
-
-SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT", "System Ready.")
-
 from app.core.registry import initialize_all_models
 from app.core.gpu_manager import GPUManager
+from app.prompts.personas import (
+    BASE_MISSION, JULIA_CORE, CRISTINA_CORE, ATHENA_CORE, 
+    VESPER_CORE, LYRA_CORE, NOVA_CORE, ASTRA_CORE
+)
 
 load_dotenv()
 
@@ -17,32 +16,43 @@ GPU_MANAGER = GPUManager()
 
 # Map UI names to internal IDs
 MODEL_MAP = {
-    "Curator (12B - General)": "curator",
-    "Devourer (27B - Deep Reasoner)": "devourer",
-    "CodeGemma (Programming Expert)": "CodeGemma",
-    "MedGemma (Clinical Specialist)": "MedGemma",
-    "PaliGemma (Vision/Multimodal)": "PaliGemma",
-    "ShieldGemma (Safety Auditor)": "ShieldGemma",
-    "DataGemma (Statistical Fact-Checker)": "DataGemma",
+    "Julia (12B - Lead Operations)": "curator",
+    "Athena (27B - Strategic Intel)": "devourer",
+    "Lyra (Systems Architect - Code)": "CodeGemma",
+    "Cristina (Surgical/Clinical - Med)": "MedGemma",
+    "Nova (Imaging Specialist - Vision)": "PaliGemma",
+    "Vesper (Security/Integrity - Shield)": "ShieldGemma",
+    "Astra (Intelligence Analyst - Data)": "DataGemma",
+}
+
+# Map internal IDs to Persona Strings
+PERSONA_MAP = {
+    "curator": JULIA_CORE,
+    "devourer": ATHENA_CORE,
+    "CodeGemma": LYRA_CORE,
+    "MedGemma": CRISTINA_CORE,
+    "PaliGemma": NOVA_CORE,
+    "ShieldGemma": VESPER_CORE,
+    "DataGemma": ASTRA_CORE,
 }
 
 def chat_logic(message, history, model_choice):
     model_id = MODEL_MAP.get(model_choice)
     if not model_id:
-        return history + [["Error", "Model not recognized."]]
+        yield history + [["Error", "Model not recognized."]]
+        return
 
     # 1. Request the model to GPU
     success = GPU_MANAGER.request_model(model_id)
     if not success:
-        return history + [[message, f"!! ERROR: Failed to load {model_choice}. Check model weights."]]
+        yield history + [[message, f"!! ERROR: Failed to load {model_choice}. Check model weights."]]
+        return
 
     instance = MODEL_INSTANCES.get(model_id)
+    custom_persona = BASE_MISSION + "\n" + PERSONA_MAP.get(model_id, "")
     
     # 2. Execute Generation
     if model_id == "curator":
-        # Curator supports streaming
-        partial_gen = ""
-        # Converting history to format Curator expects
         formatted_history = []
         for h in history:
             formatted_history.append({"role": "user", "content": h[0]})
@@ -51,12 +61,10 @@ def chat_logic(message, history, model_choice):
         for response in instance.stream_response(message, formatted_history):
             yield history + [[message, response]]
     elif model_id == "devourer":
-        # Devourer uses query engine
-        response = instance.query(message)
+        response = instance.query(f"Context: {custom_persona}\nRequest: {message}")
         yield history + [[message, response]]
     else:
-        # Specialists use simple generate
-        response = instance.generate(message, system_prompt=SYSTEM_PROMPT)
+        response = instance.generate(message, system_prompt=custom_persona)
         yield history + [[message, response]]
 
 with gr.Blocks(theme=gr.themes.Soft(primary_hue="cyan")) as demo:
@@ -68,10 +76,9 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="cyan")) as demo:
             gr.Markdown("### 🧠 Neural Specialist")
             gr.Textbox(label="Active Persona", value=SYSTEM_PROMPT, interactive=False)
             
-            # THE NEW PRESET DROPDOWN
             model_selector = gr.Dropdown(
                 choices=list(MODEL_MAP.keys()),
-                value="Curator (12B - General)",
+                value="Julia (12B - Lead Operations)",
                 label="Select Neural Specialist",
                 interactive=True
             )
@@ -82,16 +89,15 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="cyan")) as demo:
 
             def update_specs(choice):
                 specs = {
-                    "Curator": "General Chat, Routing, 12B Params",
-                    "Devourer": "Deep Reasoning, RAG context, 27B Params",
-                    "CodeGemma": "Python/Rust/C++ Expert, Code Completion",
-                    "MedGemma": "Medical Imaging, Clinical Reasoning",
-                    "PaliGemma": "Image Captioning, OCR, Object Detection",
-                    "ShieldGemma": "Content Moderation, Safety Scoring",
-                    "DataGemma": "RAG over Data Commons, Statistics"
+                    "Julia": "Command & Control, General Logic",
+                    "Athena": "Complex Synthesis, Massive RAG contextualization",
+                    "Lyra": "Protocol Automation, Code Generation & Fixes",
+                    "Cristina": "Clinical Reasoning, Diagnostics, Pharmacology",
+                    "Nova": "Multimodal Input, OCR, Visual Forensics",
+                    "Vesper": "Policy Enforcement, Safety Guarding, Integrity Audit",
+                    "Astra": "Data Commons Retrieval, Fact-based Statistics"
                 }
-                # Simple keyword matching for demo
-                val = next((v for k, v in specs.items() if k in choice), "Unknown Specification")
+                val = next((v for k, v in specs.items() if k in choice), "Unknown Specialist")
                 return val
 
             model_selector.change(update_specs, model_selector, capabilities)
@@ -99,12 +105,10 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="cyan")) as demo:
         with gr.Column(scale=4):
             chatbot = gr.Chatbot(height=600, label="Secure Workspace")
             msg = gr.Textbox(label="Input Command", placeholder="Type 'Execute', ask a question, or paste code...")
-            
-            # Placeholder for Image Upload if PaliGemma is selected
             img_input = gr.Image(label="Vision Input (PaliGemma)", visible=False)
             
             def toggle_vision(choice):
-                return gr.update(visible=("PaliGemma" in choice))
+                return gr.update(visible=("Nova" in choice or "PaliGemma" in choice))
 
             model_selector.change(toggle_vision, model_selector, img_input)
 
