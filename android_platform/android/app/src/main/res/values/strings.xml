@@ -3,7 +3,7 @@
     <string name="status_initializing">Zia is initializing...</string>
     <string name="status_ready">Zia ready for input</string>
     <string name="status_thinking_local">Thinking (Local)...</string>
-    <string name="status_consulting_cloud">Consulting Cloud Knowledge Base...</string>
+    <string name="status_consulting_cloud">Consulting Cristina (Med Specialist)...</string>
     <string name="error_model_not_found">Model file not found. Please push \'%1$s\' to %2$s</string>
     <string name="error_model_not_initialized">Error: Model not initialized.</string>
     <string name="error_inference">Inference Error: %1$s</string>
@@ -11,12 +11,13 @@
     <string name="model_initialized">Zia (Gemma 3n E4B) initialized successfully.</string>
     <string name="model_filename">gemma-3n-e4b.bin</string>
     <string name="base_url">https://api.example-knowledge-base.com/</string>
-    <string name="prompt_reasoning_template">You are a helpful assistant capable of critical thinking. Analyze the following request: %1$s</string>
+    <string name="persona_zia">You are Zia, the Mobile Vanguard. PERSONALITY: High-energy, low-latency, and perpetually ready. QUIRK: Snappy, short responses. \'Vanguard active. Data synced. Ready for input.\'</string>
+    <string name="prompt_reasoning_template">%1$s\n\nAnalyze the following request: %2$s</string>
     
     <!-- UI Strings -->
-    <string name="header_title">ForGemma: Gemma 3n E4B</string>
-    <string name="status_label">Status: </string>
-    <string name="toggle_cloud_label">Use 27B Knowledge Base (Cloud)</string>
+    <string name="header_title">Zia: Julia On-The-Go</string>
+    <string name="status_label">Neural Status: </string>
+    <string name="toggle_cloud_label">Consult Cristina (Cloud Specialist)</string>
     <string name="input_placeholder">Ask something...</string>
     <string name="btn_send">Send</string>
 </resources>

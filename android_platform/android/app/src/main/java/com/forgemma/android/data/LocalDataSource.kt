@@ -50,7 +50,8 @@ class LocalDataSource(private val context: Context) {
                 return@withContext Result.Error(Exception(context.getString(R.string.error_model_not_initialized)))
             }
             try {
-                val fullPrompt = "<start_of_turn>user\n$prompt<end_of_turn>\n<start_of_turn>model\n"
+                val persona = context.getString(R.string.persona_zia)
+                val fullPrompt = "<start_of_turn>system\n$persona<end_of_turn>\n<start_of_turn>user\n$prompt<end_of_turn>\n<start_of_turn>model\n"
                 val response = llmInference?.generateResponse(fullPrompt) 
                     ?: return@withContext Result.Error(Exception("No response generated"))
                 Result.Success(response)
