@@ -15,9 +15,21 @@ class LocalDataSource(private val context: Context) {
     suspend fun initialize(): Result<String> {
         return withContext(Dispatchers.IO) {
             try {
-                val modelFile = File(context.filesDir, modelFileName)
+                var modelFile = File(context.filesDir, modelFileName)
+                
+                // Fallback to public Downloads folder if not found in internal storage
                 if (!modelFile.exists()) {
-                    return@withContext Result.Error(Exception(context.getString(R.string.error_model_not_found, modelFileName, context.filesDir.absolutePath)))
+                    val downloadFolder = android.os.Environment.getExternalStoragePublicDirectory(
+                        android.os.Environment.DIRECTORY_DOWNLOADS
+                    )
+                    val fallbackFile = File(downloadFolder, modelFileName)
+                    if (fallbackFile.exists()) {
+                        modelFile = fallbackFile
+                    }
+                }
+
+                if (!modelFile.exists()) {
+                    return@withContext Result.Error(Exception(context.getString(R.string.error_model_not_found, modelFileName, "Downloads")))
                 }
 
                 val options = LlmInference.LlmInferenceOptions.builder()
