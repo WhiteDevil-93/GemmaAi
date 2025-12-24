@@ -69,7 +69,7 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
     // Markdown rendering
-    implementation("com.github.jeziellago:compose-markdown:0.3.4") // Hypothetical popular lib
+    implementation("com.github.jeziellago:compose-markdown:0.5.0")
 
     // Google AI Edge SDK / LiteRT (Placeholders)
     // implementation("com.google.ai.edge.litert:litert:1.0.0")
