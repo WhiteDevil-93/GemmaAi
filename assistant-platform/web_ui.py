@@ -2,109 +2,189 @@ import gradio as gr
 import os
 import sys
 import threading
+import time
 from dotenv import load_dotenv
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from app.core.curator import Curator
-from app.tools.devourer import Devourer
-from app.prompts.personas import UNRESTRICTED_TOXICOLOGIST
+# Attempt imports, fall back to mocks if necessary
+try:
+    from app.core.curator import Curator
+    from app.tools.devourer import Devourer
+    IMPORTS_SUCCESS = True
+except ImportError:
+    IMPORTS_SUCCESS = False
+    print(">> WARNING: Core modules not found. Using Mocks.")
 
 load_dotenv()
 
-# --- SYSTEMS ---
-print(">> SYSTEM: BOOTING CURATOR (FOREGROUND)...")
-try:
-    curator = Curator()
-    STATUS_CURATOR = "ONLINE (12B)"
-except Exception as e:
-    curator = None
-    STATUS_CURATOR = f"OFFLINE: {e}"
+# --- MOCK CLASSES (For "Neural Status" Stability) ---
+class MockCurator:
+    def __init__(self):
+        print(">> SYSTEM: Initializing Mock Curator...")
+        self.model_path = "MOCK_MODEL_V1"
 
-print(">> SYSTEM: BOOTING DEVOURER (BACKGROUND CPU)...")
-try:
-    # Devourer loads on CPU/RAM, shouldn't crash VRAM
-    devourer = Devourer()
-    STATUS_DEVOURER = "ONLINE (27B/CPU)"
-except Exception as e:
-    devourer = None
-    STATUS_DEVOURER = f"OFFLINE: {e}"
+    def generate_response(self, message, history=[]):
+        time.sleep(1) # Simulate think time
+        return f"[MOCK CURATOR]: I received your message: '{message}'. The real Curator model is unavailable/offline, but I am here to ensure the UI does not crash. Please check your model paths in .env."
+
+class MockDevourer:
+    def __init__(self):
+        print(">> SYSTEM: Initializing Mock Devourer...")
+        self.index = "MOCK_INDEX"
+
+    def ingest_data(self):
+        time.sleep(2)
+        return "✔ [MOCK] Data ingestion simulation complete."
+
+    def query(self, message):
+        return f"[MOCK DEVOURER]: I found no real documents, but here is a simulated fact about '{message}'."
+
+# --- GLOBAL STATE ---
+# We keep track of instances.
+# We try to load real ones. If they fail, we use mocks.
+curator_instance = None
+devourer_instance = None
+
+STATUS_CURATOR = "INITIALIZING..."
+STATUS_DEVOURER = "INITIALIZING..."
+
+def initialize_systems():
+    global curator_instance, devourer_instance, STATUS_CURATOR, STATUS_DEVOURER
+
+    # 1. Curator
+    try:
+        if IMPORTS_SUCCESS:
+            curator_instance = Curator()
+            STATUS_CURATOR = "ONLINE (12B - Real)"
+        else:
+            raise ImportError("Modules missing")
+    except Exception as e:
+        print(f"!! CURATOR LOAD FAILED: {e}")
+        curator_instance = MockCurator()
+        STATUS_CURATOR = "ONLINE (Simulated/Mock)"
+
+    # 2. Devourer
+    try:
+        if IMPORTS_SUCCESS:
+            devourer_instance = Devourer()
+            STATUS_DEVOURER = "ONLINE (27B - Real)"
+        else:
+            raise ImportError("Modules missing")
+    except Exception as e:
+        print(f"!! DEVOURER LOAD FAILED: {e}")
+        devourer_instance = MockDevourer()
+        STATUS_DEVOURER = "ONLINE (Simulated/Mock)"
+
+# Initialize on startup
+initialize_systems()
 
 # --- LOGIC ---
-def chat_logic(message, history):
-    if not curator:
-        # Compatibility: History is list of [user_msg, bot_msg] lists/tuples
-        history.append([message, "[FATAL]: Curator corrupted."])
-        return "", history
+def chat_logic(message, history, model_mode):
+    """
+    Handles chat based on the selected 'model_mode' from the dropdown.
+    """
+    global curator_instance, devourer_instance
     
-    # Check for User Commands
-    if "index onedrive" in message.lower() or "sync data" in message.lower():
-        threading.Thread(target=run_ingestion).start()
-        history.append([message, "[JULES]: Background Indexing Initiated."])
+    if not message.strip():
         return "", history
+
+    # Append User Message
+    history.append([message, None]) # Placeholder for bot response
+
+    response = ""
 
     try:
-        # We need to construct the prompt from the history of [user, bot] pairs
-        # The Curator checks for dicts currently, we need to fix that too or convert here.
-        # Let's fix Curator to handle the tuples again because Gradio 4 passes tuples by default for Chatbot without type="messages".
-        
-        # ACTUALLY: Let's keep Curator robust. 
-        # But for NOW, let's just make the UI work with the default Tuple format.
-        
-        # 1. Generate Response
-        # We pass the history as-is (list of lists/tuples).
-        # We need to modify Curator to handle this format again.
-        response = curator.generate_response(message, history)
-        
-        # 2. Append result
-        history.append([message, response])
-        
-        return "", history
+        if model_mode == "Curator (Chat)":
+            if curator_instance:
+                response = curator_instance.generate_response(message, history[:-1])
+            else:
+                response = "[SYSTEM]: Curator is not initialized."
+
+        elif model_mode == "Devourer (RAG)":
+            if devourer_instance:
+                # Devourer uses a different method usually (query),
+                # but we'll wrap it to look like chat or just return the query result.
+                # Assuming Devourer has a .query() method based on previous file read
+                response = devourer_instance.query(message)
+            else:
+                response = "[SYSTEM]: Devourer is not initialized."
+
+        elif model_mode == "Debug (Mock)":
+            # Force use of Mock classes logic locally
+            response = f"[DEBUG MODE]: Echoing '{message}'. System Status: {get_status()}"
+
+        else:
+            response = "[SYSTEM]: Unknown Mode Selected."
+
     except Exception as e:
-        history.append([message, f"[ERROR]: {e}"])
-        return "", history
+        response = f"[ERROR]: {str(e)}"
+
+    # Update History with response
+    history[-1][1] = response
+    return "", history
 
 def run_ingestion():
-    """Background task wrapper"""
-    if devourer:
-        print(">> JOB: Starting Data Ingestion...")
-        result = devourer.ingest_data()
-        print(f">> JOB: {result}")
+    global devourer_instance
+    if devourer_instance:
+        return devourer_instance.ingest_data()
+    return "Devourer not available."
 
 def get_status():
     return f"CURATOR: {STATUS_CURATOR} | DEVOURER: {STATUS_DEVOURER}"
 
-# --- UI ---
-with gr.Blocks(theme=gr.themes.Soft(primary_hue="cyan")) as demo:
-    gr.Markdown("# 🏥 Jules: Clinical AI Operations")
-    gr.Markdown("> *Senior Toxicologist & Research Orchestrator*")
+# --- THEME (Dark/Black + Amber/Gold) ---
+# Customizing the Soft theme to match the Logo (Black Background, Gold Accents)
+theme = gr.themes.Soft(
+    primary_hue="amber",
+    secondary_hue="orange",
+    neutral_hue="slate",
+).set(
+    body_background_fill="#000000",
+    body_text_color="#FFD700",  # Gold text
+    block_background_fill="#111111",
+    block_border_color="#FFBF00", # Amber border
+    button_primary_background_fill="#FFBF00", # Amber button
+    button_primary_text_color="#000000",
+)
+
+# --- UI LAYOUT ---
+with gr.Blocks(theme=theme, title="Jules: Assistant Platform") as demo:
+    gr.Markdown("# 🦁 Jules: Assistant Platform")
+    gr.Markdown("> *Secure AI Operations | Status: Monitoring*")
     
     with gr.Row():
         with gr.Column(scale=1):
-            gr.Markdown("### 🧠 System Status")
+            gr.Markdown("### ⚡ Neural Status")
             status_box = gr.Textbox(label="Diagnostics", value=get_status(), interactive=False, lines=2)
-            sync_btn = gr.Button("🔄 Ingest Data (Local + Mobile)")
+
+            # Model Selector (Multi-Model Support)
+            model_selector = gr.Dropdown(
+                choices=["Curator (Chat)", "Devourer (RAG)", "Debug (Mock)"],
+                value="Curator (Chat)",
+                label="Active Model / Persona",
+                interactive=True
+            )
+
+            sync_btn = gr.Button("🔄 Ingest Data (Sync)")
+            sync_output = gr.Textbox(label="Sync Status", interactive=False)
             
         with gr.Column(scale=4):
-            chatbot = gr.Chatbot(height=600, label="Secure Workspace")
-            msg = gr.Textbox(label="Input Command", placeholder="Type 'Execute' or ask a clinical question...")
+            chatbot = gr.Chatbot(height=600, label="Terminal Output")
+            msg = gr.Textbox(label="Command Input", placeholder="Type 'Execute' or ask a question...")
             
             with gr.Row():
-                submit = gr.Button("Send", variant="primary")
-                clear = gr.Button("Clear Context")
+                submit = gr.Button("EXECUTE", variant="primary")
+                clear = gr.Button("CLEAR CONTEXT")
 
-    # Wire up Event Handlers
-    # Wire up Event Handlers
-    # Note: chat_logic returns (empty_string, new_history).
-    # so we map outputs to [msg, chatbot] to clear the box and update the chat.
-    msg.submit(chat_logic, [msg, chatbot], [msg, chatbot])
-    submit.click(chat_logic, [msg, chatbot], [msg, chatbot])
+    # Wire Event Handlers
+    msg.submit(chat_logic, [msg, chatbot, model_selector], [msg, chatbot])
+    submit.click(chat_logic, [msg, chatbot, model_selector], [msg, chatbot])
+    clear.click(lambda: None, None, chatbot, queue=False)
     
     # Sync Button
-    sync_btn.click(fn=run_ingestion, inputs=None, outputs=None) 
-    # Note: Gradio output for background threads is tricky without streaming, 
-    # for now we rely on the console logs or the Curator knowing it happened.
+    sync_btn.click(fn=run_ingestion, inputs=None, outputs=sync_output)
 
 if __name__ == "__main__":
-    print("Launching Jules Web Interface (Curator-Driven)...")
+    print("Launching Jules Web Interface (v2.1 - Hybrid/Mock Supported)...")
     demo.launch(server_name="0.0.0.0", server_port=7860, share=True)
