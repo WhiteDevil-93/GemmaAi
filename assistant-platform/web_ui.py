@@ -44,16 +44,8 @@ def chat_logic(message, history):
         return "", history
 
     try:
-        # We need to construct the prompt from the history of [user, bot] pairs
-        # The Curator checks for dicts currently, we need to fix that too or convert here.
-        # Let's fix Curator to handle the tuples again because Gradio 4 passes tuples by default for Chatbot without type="messages".
-        
-        # ACTUALLY: Let's keep Curator robust. 
-        # But for NOW, let's just make the UI work with the default Tuple format.
-        
         # 1. Generate Response
         # We pass the history as-is (list of lists/tuples).
-        # We need to modify Curator to handle this format again.
         response = curator.generate_response(message, history)
         
         # 2. Append result
