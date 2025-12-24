@@ -26,5 +26,5 @@ This project implements an assistant platform with a modular architecture.
    ```bash
    cp .env.template .env
    ```
-2. Ensure you have the model file `gemma-2b-it-gpu-int4.bin` in the root of the `assistant-platform` directory.
+2. Ensure you have the model file `gemma-3n-E4B-it-int4.bin` in the root of the `assistant-platform` directory.
    - If your model file has a different name, update the `MODEL_PATH_CURATOR` and `MODEL_PATH_DEVOURER` variables in `.env` to match your filename.
