@@ -116,9 +116,11 @@ fun MainScreen(hiveManager: HiveManager) {
             value = input,
             onValueChange = { input = it },
             modifier = Modifier.fillMaxWidth(),
-            colors = TextFieldDefaults.textFieldColors(
-                containerColor = NeuralBlack,
-                textColor = TextWhite,
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = NeuralBlack,
+                unfocusedContainerColor = NeuralBlack,
+                focusedTextColor = TextWhite,
+                unfocusedTextColor = TextWhite,
                 cursorColor = NeonGreen,
                 focusedIndicatorColor = NeonGreen,
                 unfocusedIndicatorColor = CyanBlue
