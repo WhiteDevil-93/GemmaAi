@@ -133,19 +133,22 @@ def run_ingestion():
 def get_status():
     return f"CURATOR: {STATUS_CURATOR} | DEVOURER: {STATUS_DEVOURER}"
 
-# --- THEME (Dark/Black + Amber/Gold) ---
-# Customizing the Soft theme to match the Logo (Black Background, Gold Accents)
+# --- THEME (Cyberpunk/Neon: Cyan + Purple) ---
+# Customizing the theme to match the PixAI Logo (Neon Blue/Cyan Primary, Purple/Magenta Accents, Dark Background)
 theme = gr.themes.Soft(
-    primary_hue="amber",
-    secondary_hue="orange",
+    primary_hue="cyan",
+    secondary_hue="fuchsia",
     neutral_hue="slate",
 ).set(
-    body_background_fill="#000000",
-    body_text_color="#FFD700",  # Gold text
-    block_background_fill="#111111",
-    block_border_color="#FFBF00", # Amber border
-    button_primary_background_fill="#FFBF00", # Amber button
-    button_primary_text_color="#000000",
+    body_background_fill="#050510", # Deep Dark Blue/Black
+    body_text_color="#E0E0FF",      # Pale Blue/White text
+    block_background_fill="#0F0F20", # Dark Navy Block
+    block_border_color="#00FFFF",   # Neon Cyan Border
+    block_title_text_color="#00FFFF", # Cyan Titles
+    input_background_fill="#1A1A30",
+    button_primary_background_fill="#D000FF", # Magenta/Purple Button
+    button_primary_text_color="#FFFFFF",
+    slider_color="#00FFFF",
 )
 
 # --- UI LAYOUT ---
