@@ -20,11 +20,11 @@ android {
         }
 
         // NPU Optimization flags (Conceptual/Placeholder)
-        externalNativeBuild {
-            cmake {
-                cppFlags += "-DENABLE_NPU_ACCELERATION"
-            }
-        }
+        // externalNativeBuild {
+        //    cmake {
+        //        cppFlags += "-DENABLE_NPU_ACCELERATION"
+        //    }
+        // }
     }
 
     buildTypes {

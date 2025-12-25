@@ -73,9 +73,9 @@ fun StarTrigger(
             for (i in 0 until numPoints * 2) {
                 val radius = if (i % 2 == 0) outerRadius else innerRadius
                 val angle = Math.PI / numPoints * i - Math.PI / 2
-                val x = cx + cos(angle) * radius
-                val y = cy + sin(angle) * radius
-                if (i == 0) path.moveTo(x.toFloat(), y.toFloat()) else path.lineTo(x.toFloat(), y.toFloat())
+                val x = cx + (cos(angle) * radius).toFloat()
+                val y = cy + (sin(angle) * radius).toFloat()
+                if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
             }
             path.close()
 
